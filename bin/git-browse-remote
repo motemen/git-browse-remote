@@ -1,0 +1,111 @@
+#!/usr/bin/env ruby
+
+# USAGE:
+#   git browse-remote [-r|--remote {remote}] [--top|--rev] [{commit}]
+#
+
+require 'optparse'
+
+class Path < Array
+  def to_s
+    join('/')
+  end
+end
+
+remote = nil
+mode = nil
+
+MAPPING_RECIPES = {
+  :github => {
+    :top => 'https://{host}/{path}',
+    :ref => 'https://{host}/{path}/tree/{short_ref}',
+    :rev => 'https://{host}/{path}/commit/{commit}',
+  },
+
+  :gitweb => {
+    :top => 'http://{host}/?p={path[-2..-1]}.git',
+    :ref => 'http://{host}/?p={path[-2..-1]}.git;h={ref}',
+    :rev => 'http://{host}/?p={path[-2..-1]}.git;a=commit;h={ref}',
+  }
+}
+
+OptionParser.new do |opt|
+  opt.banner = 'git browse-remote [options] [<commit> | <remote>]'
+  opt.on('-r', '--remote=<remote>', 'specify remote') { |r| remote = r }
+  opt.on('--top', 'open `top` page') { mode = 'top' }
+  opt.on('--rev', 'open `rev` page') { mode = 'rev' }
+  opt.on('--init [<host>=<recipe>]', 'initialize default url mappings') do |config|
+    if config
+      host, name = *config.split(/=/, 2)
+    else
+      host, name = 'github.com', 'github'
+    end
+
+    STDERR.puts "Writing config for #{host}..."
+
+    mapping = MAPPING_RECIPES[name.to_sym] or abort "Recipe '#{name}' not found"
+    mapping.each do |mode,template|
+      system %Q(git config --global browse-remote.#{host}.#{mode} '#{template}')
+    end
+
+    STDERR.puts 'Mappings generated:'
+    exec "git config --get-regexp ^browse-remote\\.#{host}\\."
+  end
+  opt.parse!(ARGV)
+end
+
+target = ARGV.shift || `git symbolic-ref -q HEAD`[/.+/]
+
+if target
+  if `git rev-parse --verify --quiet #{target}` && $? == 0
+    # valid ref
+    ref = `git rev-parse --symbolic-full-name #{target}`.chomp
+  elsif `git config --get remote.#{target}.url`.chomp.empty? == false
+    # not a valid ref, but valid remote
+    ref = 'master'
+    remote = target
+    target = nil
+  else
+    abort "Not a valid ref or remote: #{target}"
+  end
+else
+  ref = `git name-rev --name-only HEAD`.chomp.sub(%r(\^0$), '') # some workaround for ^0
+end
+
+commit = `git rev-parse #{target || 'HEAD'}`.chomp
+
+if ref == 'HEAD'
+  ref = nil
+  short_ref = nil
+else
+  short_ref = ref.sub(%r(^refs/), '')
+
+  if short_ref.sub!(%r(^heads/), '')
+    mode ||= short_ref == 'master' ? :top : :ref
+  end
+
+  if short_ref.sub!(%r(^tags/), '')
+    mode ||= :ref
+  end
+
+  if short_ref.sub!(%r(^remotes/([^/]+)/), '')
+    remote ||= $1
+  end
+
+end
+
+remote ||= 'origin'
+mode   ||= :rev
+
+remote_url = `git config remote.#{remote}.url`[/.+/] or
+    abort "Could not get remote url: #{remote}"
+
+host, *path = remote_url.sub(%r(^\w+://), '').sub(/^[\w-]+@/, '').split(/[\/:]+/)
+path.last.sub!(/\.git$/, '')
+path = Path.new(path)
+
+template = `git config --get browse-remote.#{host}.#{mode}`[/.+/] or
+    abort "No '#{mode}' mapping found for #{host} (maybe `git browse-remote --init` required)"
+
+url = template.gsub(/{(.+?)}/) { |m| eval($1) }
+exec 'git', 'web--browse', url
