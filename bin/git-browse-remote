@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # USAGE:
-#   git browse-remote [-r|--remote {remote}] [--top|--rev] [{commit}]
+#   git browse-remote [-r|--remote <remote>}] [--top|--rev|--ref] [<commit>]
 #
 
 require 'optparse'
@@ -15,6 +15,12 @@ end
 remote = nil
 mode = nil
 
+# Variables available:
+#  * host (eg. "github.com")
+#  * path - Sliceable like an Array (eg. "motemen/git-browse-remote")
+#  * ref (eg. "refs/heads/master")
+#  * short_ref (eg. "master")
+#  * commit (eg. "04f7c64ba9d524cf311a673ddce5722b2441e2ea")
 MAPPING_RECIPES = {
   :github => {
     :top => 'https://{host}/{path}',
@@ -32,8 +38,9 @@ MAPPING_RECIPES = {
 OptionParser.new do |opt|
   opt.banner = 'git browse-remote [options] [<commit> | <remote>]'
   opt.on('-r', '--remote=<remote>', 'specify remote') { |r| remote = r }
-  opt.on('--top', 'open `top` page') { mode = 'top' }
-  opt.on('--rev', 'open `rev` page') { mode = 'rev' }
+  opt.on('--top', 'open `top` page') { mode = :top }
+  opt.on('--rev', 'open `rev` page') { mode = :rev }
+  opt.on('--ref', 'open `ref` page') { mode = :ref }
   opt.on('--init [<host>=<recipe>]', 'initialize default url mappings') do |config|
     if config
       host, name = *config.split(/=/, 2)
