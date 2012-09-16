@@ -97,6 +97,7 @@ else
 
   if short_ref.sub!(%r(^remotes/([^/]+)/), '')
     remote ||= $1
+    mode ||= short_ref == 'master' ? :top : :ref
   end
 
 end
