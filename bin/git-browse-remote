@@ -115,5 +115,5 @@ path = Path.new(path)
 template = `git config --get browse-remote.#{host}.#{mode}`[/.+/] or
     abort "No '#{mode}' mapping found for #{host} (maybe `git browse-remote --init` required)"
 
-url = template.gsub(/{(.+?)}/) { |m| eval($1) }
+url = template.gsub(/\{(.+?)\}/) { |m| eval($1) }
 exec 'git', 'web--browse', url
