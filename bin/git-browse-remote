@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # USAGE:
-#   git browse-remote [-r|--remote <remote>}] [--top|--rev|--ref] [<commit>]
+#   git browse-remote [-r|--remote <remote>] [--top|--rev|--ref] [-L <n>] [<commit>] [<file>]
 #
 
 require 'optparse'
@@ -14,6 +14,8 @@ end
 
 remote = nil
 mode = nil
+file = nil
+line = nil
 
 # Variables available:
 #  * host (eg. "github.com")
@@ -21,23 +23,32 @@ mode = nil
 #  * ref (eg. "refs/heads/master")
 #  * short_ref (eg. "master")
 #  * commit (eg. "04f7c64ba9d524cf311a673ddce5722b2441e2ea")
+#  * short_commit (eg. "04f7c64b")
+#  * rev (ref or commit)
+#  * short_rev (short_ref or short_commit)
+#  * file (eg. "bin/git-browse-remote")
+#  * line (eg. 30)
 MAPPING_RECIPES = {
   :github => {
-    :top => 'https://{host}/{path}',
-    :ref => 'https://{host}/{path}/tree/{short_ref}',
-    :rev => 'https://{host}/{path}/commit/{commit}',
+    :top  => 'https://{host}/{path}',
+    :ref  => 'https://{host}/{path}/tree/{short_ref}',
+    :rev  => 'https://{host}/{path}/commit/{commit}',
+    :file => 'https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}'
   },
 
   :gitweb => {
     :top => 'http://{host}/?p={path[-2..-1]}.git',
     :ref => 'http://{host}/?p={path[-2..-1]}.git;h={ref}',
     :rev => 'http://{host}/?p={path[-2..-1]}.git;a=commit;h={ref}',
+    # XXX
+    # I don't know file url of gitweb...
   }
 }
 
 OptionParser.new do |opt|
   opt.banner = 'git browse-remote [options] [<commit> | <remote>]'
   opt.on('-r', '--remote=<remote>', 'specify remote') { |r| remote = r }
+
   opt.on('--top', 'open `top` page') { mode = :top }
   opt.on('--rev', 'open `rev` page') { mode = :rev }
   opt.on('--ref', 'open `ref` page') { mode = :ref }
@@ -58,10 +69,19 @@ OptionParser.new do |opt|
     STDERR.puts 'Mappings generated:'
     exec "git config --get-regexp ^browse-remote\\.#{host}\\."
   end
+  opt.on('-L <n>', 'specify line number (only meaningful on file mode)', Integer) { |n| line = n }
   opt.parse!(ARGV)
 end
 
-target = ARGV.shift || `git symbolic-ref -q HEAD`[/.+/]
+target, file = *ARGV[0..1]
+
+# handle git browse-remote <file>
+# TODO file exists and also is a valid ref/origin
+if target && !file && File.exists?(target)
+  target, file = nil, target
+end
+
+target ||= `git symbolic-ref -q HEAD`[/.+/]
 
 if target
   if `git rev-parse --verify --quiet #{target}` && $? == 0
@@ -78,8 +98,6 @@ if target
 else
   ref = `git name-rev --name-only HEAD`.chomp.sub(%r(\^0$), '') # some workaround for ^0
 end
-
-commit = `git rev-parse #{target || 'HEAD'}`.chomp
 
 if ref == 'HEAD'
   ref = nil
@@ -101,6 +119,15 @@ else
   end
 
 end
+
+commit       = `git rev-parse #{target || 'HEAD'}`.chomp
+short_commit = `git rev-parse --short #{target || 'HEAD'}`.chomp
+
+# `rev` will be raw sha1 if --rev is specified explicitly
+rev       = mode == :rev ? commit : ref || commit
+short_rev = mode == :rev ? short_commit : short_ref || short_commit
+
+mode = :file if file
 
 remote ||= 'origin'
 mode   ||= :rev
