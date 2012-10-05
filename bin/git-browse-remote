@@ -27,7 +27,7 @@ MAPPING_RECIPES = {
     :top  => 'https://{host}/{path}',
     :ref  => 'https://{host}/{path}/tree/{short_ref}',
     :rev  => 'https://{host}/{path}/commit/{commit}',
-    :file => 'https://{host}/{path}/blob/{id}/{file}'
+    :file => 'https://{host}/{path}/blob/{rev}/{file}'
   },
 
   :gitweb => {
@@ -118,10 +118,8 @@ host, *path = remote_url.sub(%r(^\w+://), '').sub(/^[\w-]+@/, '').split(/[\/:]+/
 path.last.sub!(/\.git$/, '')
 path = Path.new(path)
 
-if (file)
-  id = mode == :rev ? commit : short_ref
-  mode = :file
-end
+rev = rev || commit
+short_rev = short_ref || commit
 
 template = `git config --get browse-remote.#{host}.#{mode}`[/.+/] or
     abort "No '#{mode}' mapping found for #{host} (maybe `git browse-remote --init` required)"
