@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # USAGE:
-#   git browse-remote [-r|--remote <remote>}] [--top|--rev|--ref] [<commit>]
+#   git browse-remote [-r|--remote <remote>] [--top|--rev|--ref] [-L <n>] [<commit>] [<file>]
 #
 
 require 'optparse'
@@ -15,6 +15,7 @@ end
 remote = nil
 mode = nil
 file = nil
+line = nil
 
 # Variables available:
 #  * host (eg. "github.com")
@@ -27,7 +28,7 @@ MAPPING_RECIPES = {
     :top  => 'https://{host}/{path}',
     :ref  => 'https://{host}/{path}/tree/{short_ref}',
     :rev  => 'https://{host}/{path}/commit/{commit}',
-    :file => 'https://{host}/{path}/blob/{rev}/{file}'
+    :file => 'https://{host}/{path}/blob/{rev}/{file}{line && "#L%d" % line}'
   },
 
   :gitweb => {
@@ -63,6 +64,7 @@ OptionParser.new do |opt|
     STDERR.puts 'Mappings generated:'
     exec "git config --get-regexp ^browse-remote\\.#{host}\\."
   end
+  opt.on('-L <n>', 'specify line number (only meaningful on file mode)', Integer) { |n| line = n }
   opt.parse!(ARGV)
 end
 
