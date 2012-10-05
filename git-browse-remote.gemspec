@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name     = 'git-browse-remote'
-  s.version  = '0.0.1'
+  s.version  = '0.0.2'
   s.homepage = 'https://github.com/motemen/git-browse-remote'
   s.summary  = 'Open web browser to view remote Git repositories'
   s.author   = 'motemen'
