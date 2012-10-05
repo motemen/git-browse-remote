@@ -42,7 +42,6 @@ MAPPING_RECIPES = {
 OptionParser.new do |opt|
   opt.banner = 'git browse-remote [options] [<commit> | <remote>]'
   opt.on('-r', '--remote=<remote>', 'specify remote') { |r| remote = r }
-  opt.on('-f', '--file=<file>', 'specify file') { |f| file = f }
 
   opt.on('--top', 'open `top` page') { mode = :top }
   opt.on('--rev', 'open `rev` page') { mode = :rev }
@@ -67,7 +66,13 @@ OptionParser.new do |opt|
   opt.parse!(ARGV)
 end
 
-target = ARGV.shift || `git symbolic-ref -q HEAD`[/.+/]
+target, file = *ARGV[0..1]
+
+if !file && File.exists?(target)
+  target, file = nil, target
+end
+
+target ||= `git symbolic-ref -q HEAD`[/.+/]
 
 if target
   if `git rev-parse --verify --quiet #{target}` && $? == 0
@@ -86,6 +91,8 @@ else
 end
 
 commit = `git rev-parse #{target || 'HEAD'}`.chomp
+
+mode = :file if file
 
 if ref == 'HEAD'
   ref = nil
@@ -111,15 +118,15 @@ end
 remote ||= 'origin'
 mode   ||= :rev
 
+rev = rev || commit
+short_rev = short_ref || commit
+
 remote_url = `git config remote.#{remote}.url`[/.+/] or
     abort "Could not get remote url: #{remote}"
 
 host, *path = remote_url.sub(%r(^\w+://), '').sub(/^[\w-]+@/, '').split(/[\/:]+/)
 path.last.sub!(/\.git$/, '')
 path = Path.new(path)
-
-rev = rev || commit
-short_rev = short_ref || commit
 
 template = `git config --get browse-remote.#{host}.#{mode}`[/.+/] or
     abort "No '#{mode}' mapping found for #{host} (maybe `git browse-remote --init` required)"
