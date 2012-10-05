@@ -7,7 +7,7 @@ USAGE
 -----
 
 ```
-git browse-remote [-r|--remote <remote>] [--top|--rev|--ref] [<commit> | <remote>]
+git browse-remote [-r|--remote <remote>] [--top|--rev|--ref] [-L <n> [<commit> | <remote>] [<file>]
 ```
 
 `git-browse-remote` opens your web browser by `git web--browse` to show current repository in browser.
@@ -36,6 +36,7 @@ Mappings generated:
 browse-remote.github.com.top https://{host}/{path}
 browse-remote.github.com.ref https://{host}/{path}/tree/{short_ref}
 browse-remote.github.com.rev https://{host}/{path}/commit/{commit}
+browse-remote.github.com.file https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}
 ```
 
 Execute `git config browse-remote.<host>.{top|ref|rev} <url template>`
@@ -58,3 +59,8 @@ VARIABLES AVAILABLE IN URL TEMPLATE
  * `ref` (eg. "refs/heads/master")
  * `short_ref` (eg. "master")
  * `commit` (eg. "04f7c64ba9d524cf311a673ddce5722b2441e2ea")
+ * `short_commit` (eg. "04f7c64b")
+ * `rev` (ref or commit)
+ * `short_rev` (short_ref or short_commit)
+ * `file` (eg. "bin/git-browse-remote")
+ * `line` (eg. 30)
