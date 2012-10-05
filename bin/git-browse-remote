@@ -14,6 +14,7 @@ end
 
 remote = nil
 mode = nil
+file = nil
 
 # Variables available:
 #  * host (eg. "github.com")
@@ -23,21 +24,26 @@ mode = nil
 #  * commit (eg. "04f7c64ba9d524cf311a673ddce5722b2441e2ea")
 MAPPING_RECIPES = {
   :github => {
-    :top => 'https://{host}/{path}',
-    :ref => 'https://{host}/{path}/tree/{short_ref}',
-    :rev => 'https://{host}/{path}/commit/{commit}',
+    :top  => 'https://{host}/{path}',
+    :ref  => 'https://{host}/{path}/tree/{short_ref}',
+    :rev  => 'https://{host}/{path}/commit/{commit}',
+    :file => 'https://{host}/{path}/blob/{id}/{file}'
   },
 
   :gitweb => {
     :top => 'http://{host}/?p={path[-2..-1]}.git',
     :ref => 'http://{host}/?p={path[-2..-1]}.git;h={ref}',
     :rev => 'http://{host}/?p={path[-2..-1]}.git;a=commit;h={ref}',
+    # XXX
+    # I don't know file url of gitweb...
   }
 }
 
 OptionParser.new do |opt|
   opt.banner = 'git browse-remote [options] [<commit> | <remote>]'
   opt.on('-r', '--remote=<remote>', 'specify remote') { |r| remote = r }
+  opt.on('-f', '--file=<file>', 'specify file') { |f| file = f }
+
   opt.on('--top', 'open `top` page') { mode = :top }
   opt.on('--rev', 'open `rev` page') { mode = :rev }
   opt.on('--ref', 'open `ref` page') { mode = :ref }
@@ -111,6 +117,11 @@ remote_url = `git config remote.#{remote}.url`[/.+/] or
 host, *path = remote_url.sub(%r(^\w+://), '').sub(/^[\w-]+@/, '').split(/[\/:]+/)
 path.last.sub!(/\.git$/, '')
 path = Path.new(path)
+
+if (file)
+  id = mode == :rev ? commit : short_ref
+  mode = :file
+end
 
 template = `git config --get browse-remote.#{host}.#{mode}`[/.+/] or
     abort "No '#{mode}' mapping found for #{host} (maybe `git browse-remote --init` required)"
