@@ -1,13 +1,4 @@
-[browse-remote "github.com"]
-	top = https://{host}/{path}
-	ref = https://{host}/{path}/tree/{short_ref}
-	rev = https://{host}/{path}/commit/{commit}
-	file = "https://{host}/{path}/blob/{short_rev}/{file}{line && \"#L%d\" % line}"
 [remote "origin"]
 	url = https://github.com/user/repo.git
 [remote "origin2"]
 	url = git@github.com:user/repo2
-[web]
-	browser = echo
-[browser "echo"]
-	cmd = echo
