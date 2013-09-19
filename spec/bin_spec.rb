@@ -2,6 +2,7 @@ require 'rspec'
 require 'tmpdir'
 require 'pathname'
 require 'open3'
+require 'simplecov'
 
 ROOT = Pathname.new(__FILE__).parent.parent
 
@@ -68,6 +69,12 @@ def branch_sha1
   @branch_sha1 ||= git('rev-parse', 'branch-1').chomp
 end
 
+module Kernel
+  def exec(*args)
+    $exec_args = args
+  end
+end
+
 def with_args(*args, &block)
   description = if args.empty?
     '(no arguments)'
@@ -76,7 +83,19 @@ def with_args(*args, &block)
   end
 
   describe description do
-    subject { %x(#{RbConfig.ruby} #{command} #{args.join(' ')}).chomp }
+    subject do
+      ARGV.replace(args)
+
+      SimpleCov.start
+
+      load ROOT + 'bin/git-browse-remote', true
+
+      SimpleCov.instance_eval do
+        @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
+      end
+
+      $exec_args[2]
+    end
 
     it(&block)
   end
