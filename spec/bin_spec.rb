@@ -26,15 +26,32 @@ RSpec.configure do |config|
 
     FileUtils.copy_file ROOT + 'README.md', 'README.md'
     git :add, 'README.md'
-    git :commit, '-m' 'first commit'
+    git :commit, '-m' '1st commit'
 
-    git :commit, '-m' 'second commit', '--allow-empty'
+    git :commit, '-m' '2nd commit', '--allow-empty'
 
     git :checkout, '-b', 'branch-1'
 
     git :commit, '-m' 'branched commit', '--allow-empty'
 
     git :checkout, 'master'
+
+    git :commit, '-m' '3rd commit', '--allow-empty'
+
+    git :tag, 'tag-a'
+
+    git :commit, '-m' '4th commit', '--allow-empty'
+
+    git :commit, '-m' '5th commit', '--allow-empty'
+
+    # the commit graph looks like below;
+    # * xxxxxxx (branch-1) branched commit
+    # | * xxxxxxx (HEAD, master) 5th commit
+    # | * xxxxxxx 4th commit
+    # | * xxxxxxx (tag: tag-a) 3rd commit
+    # |/
+    # * xxxxxxx 2nd commit
+    # * xxxxxxx 1st commit
   end
 
   config.after(:all) do
@@ -171,6 +188,14 @@ describe 'git-browse-remote' do
 
     with_args do
       should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
+    end
+  end
+
+  context 'on tag' do
+    before { git :checkout, 'tag-a' }
+
+    with_args do
+      should navigate_to("https://github.com/user/repo/tree/tag-a")
     end
   end
 
