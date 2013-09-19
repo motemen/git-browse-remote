@@ -125,6 +125,10 @@ def with_args(*args, &block)
 end
 
 describe 'git-browse-remote' do
+  with_args '--init' do
+    should_not be_nil
+  end
+
   with_args do
     should navigate_to('https://github.com/user/repo')
   end
@@ -217,4 +221,11 @@ describe 'git-browse-remote' do
     should navigate_to("https://github.com/user/repo2/commit/#{master_sha1}")
   end
 
+  with_args 'README.md' do
+    should navigate_to("https://github.com/user/repo/blob/master/README.md")
+  end
+
+  with_args 'origin2' do
+    should navigate_to("https://github.com/user/repo2/commit/#{master_sha1}") # FIXME bug
+  end
 end
