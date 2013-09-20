@@ -4,10 +4,6 @@ require 'pathname'
 require 'open3'
 require 'simplecov'
 
-at_exit do
-  SimpleCov.result.format!
-end
-
 ROOT = Pathname.new(__FILE__).parent.parent
 
 def git(*args)
@@ -121,9 +117,8 @@ def with_args(*args, &block)
 
       SimpleCov.instance_eval do
         @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
+        SimpleCov::ResultMerger.store_result(@result)
       end
-
-      SimpleCov.result # store_result
 
       $exec_args[2]
     end
