@@ -107,6 +107,11 @@ module Kernel
   end
 end
 
+def git_browse_remote(args)
+  ARGV.replace(args)
+  load ROOT + 'bin/git-browse-remote', true
+end
+
 def with_args(*args, &block)
   description = if args.empty?
     '(no arguments)'
@@ -116,11 +121,9 @@ def with_args(*args, &block)
 
   describe description do
     subject do
-      ARGV.replace(args)
-
       SimpleCov.start
 
-      load ROOT + 'bin/git-browse-remote', true
+      git_browse_remote(args)
 
       SimpleCov.lap
 
@@ -250,5 +253,9 @@ describe 'git-browse-remote' do
     with_args do
       should navigate_to("https://github.com/user/repo3")
     end
+  end
+
+  it 'should abort on invalid ref' do
+    expect { git_browse_remote([ 'xxx-nonexistent-ref' ]) }.to raise_error SystemExit
   end
 end
