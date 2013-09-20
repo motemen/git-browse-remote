@@ -6,6 +6,13 @@ require 'simplecov'
 
 ROOT = Pathname.new(__FILE__).parent.parent
 
+module SimpleCov
+  def self.lap
+    @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
+    SimpleCov::ResultMerger.store_result(@result)
+  end
+end
+
 def git(*args)
   out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
   if status != 0
@@ -115,10 +122,7 @@ def with_args(*args, &block)
 
       load ROOT + 'bin/git-browse-remote', true
 
-      SimpleCov.instance_eval do
-        @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
-        SimpleCov::ResultMerger.store_result(@result)
-      end
+      SimpleCov.lap
 
       $exec_args[2]
     end
