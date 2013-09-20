@@ -40,22 +40,29 @@ RSpec.configure do |config|
 
     git :checkout, 'master'
 
-    git :commit, '-m' '3rd commit', '--allow-empty'
-
+    git :commit, '-m' '3rd commit (tagged)', '--allow-empty'
     git :tag, 'tag-a'
 
-    git :commit, '-m' '4th commit', '--allow-empty'
+    git :commit, '-m' '4th commit (remote HEAD)', '--allow-empty'
+    git :remote, 'add',     'local-remote', '.git'
+    git :remote, 'update',  'local-remote'
+    git :remote, 'set-url', 'local-remote', 'https://github.com/user/repo3.git'
 
     git :commit, '-m' '5th commit', '--allow-empty'
 
-    # the commit graph looks like below;
-    # * xxxxxxx (branch-1) branched commit
-    # | * xxxxxxx (HEAD, master) 5th commit
-    # | * xxxxxxx 4th commit
-    # | * xxxxxxx (tag: tag-a) 3rd commit
+    git :commit, '-m' '6th commit', '--allow-empty'
+
+    # system 'git log --abbrev-commit --oneline --decorate --graph --all'
+    ## the commit graph looks like below;
+    #
+    # * e6b5d6f (local-remote/branch-1, branch-1) branched commit
+    # | * 03b1d4d (HEAD, master) 6th commit
+    # | * b591899 5th commit
+    # | * 3139e94 (local-remote/master) 4th commit (remote HEAD)
+    # | * a423770 (tag: tag-a) 3rd commit (tagged)
     # |/
-    # * xxxxxxx 2nd commit
-    # * xxxxxxx 1st commit
+    # * 06f6ebb 2nd commit
+    # * ff7b92b 1st commit
   end
 
   config.after(:all) do
@@ -129,6 +136,10 @@ describe 'git-browse-remote' do
     should_not be_nil
   end
 
+  with_args '--init', 'gh-mirror.host=github' do
+    should_not be_nil
+  end
+
   with_args do
     should navigate_to('https://github.com/user/repo')
   end
@@ -199,6 +210,10 @@ describe 'git-browse-remote' do
     with_args do
       should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
     end
+
+    with_args 'HEAD' do
+      should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
+    end
   end
 
   context 'on tag' do
@@ -210,15 +225,15 @@ describe 'git-browse-remote' do
   end
 
   with_args '--remote', 'origin2' do
-    should navigate_to("https://github.com/user/repo2")
+    should navigate_to("https://gh-mirror.host/user/repo2")
   end
 
   with_args '-r', 'origin2' do
-    should navigate_to("https://github.com/user/repo2")
+    should navigate_to("https://gh-mirror.host/user/repo2")
   end
 
   with_args '-r', 'origin2', '--rev' do
-    should navigate_to("https://github.com/user/repo2/commit/#{master_sha1}")
+    should navigate_to("https://gh-mirror.host/user/repo2/commit/#{master_sha1}")
   end
 
   with_args 'README.md' do
@@ -226,6 +241,14 @@ describe 'git-browse-remote' do
   end
 
   with_args 'origin2' do
-    should navigate_to("https://github.com/user/repo2/commit/#{master_sha1}") # FIXME bug
+    should navigate_to("https://gh-mirror.host/user/repo2/commit/#{master_sha1}") # FIXME bug, should be in top mode
+  end
+
+  context 'on remote branch' do
+    before { git :checkout, 'local-remote/master' }
+
+    with_args do
+      should navigate_to("https://github.com/user/repo3")
+    end
   end
 end
