@@ -26,7 +26,8 @@ RSpec.configure do |config|
 
     git :init
 
-    FileUtils.copy_file ROOT + 'spec/data/gitconfig', '.git/config'
+    git :remote, 'add', 'origin', 'https://github.com/user/repo.git'
+    git :remote, 'add', 'origin2', 'git@gh-mirror.host:user/repo2'
 
     FileUtils.copy_file ROOT + 'README.md', 'README.md'
     git :add, 'README.md'
@@ -53,7 +54,7 @@ RSpec.configure do |config|
     git :commit, '-m' '6th commit', '--allow-empty'
 
     # system 'git log --abbrev-commit --oneline --decorate --graph --all'
-    ## the commit graph looks like below;
+    # the commit graph looks like below;
     #
     # * e6b5d6f (local-remote/branch-1, branch-1) branched commit
     # | * 03b1d4d (HEAD, master) 6th commit

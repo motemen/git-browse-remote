@@ -1,4 +1,0 @@
-[remote "origin"]
-	url = https://github.com/user/repo.git
-[remote "origin2"]
-	url = git@gh-mirror.host:user/repo2
