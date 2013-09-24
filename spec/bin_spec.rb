@@ -2,16 +2,19 @@ require 'rspec'
 require 'tmpdir'
 require 'pathname'
 require 'open3'
-require 'simplecov'
 
-ROOT = Pathname.new(__FILE__).parent.parent
+unless ENV['CI']
+  require 'simplecov'
 
-module SimpleCov
-  def self.lap
-    @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
-    SimpleCov::ResultMerger.store_result(@result)
+  module SimpleCov
+    def self.lap
+      @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
+      SimpleCov::ResultMerger.store_result(@result)
+    end
   end
 end
+
+ROOT = Pathname.new(__FILE__).parent.parent
 
 def git(*args)
   out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
@@ -121,11 +124,11 @@ def with_args(*args, &block)
 
   describe description do
     subject do
-      SimpleCov.start
+      SimpleCov.start unless ENV['CI']
 
       git_browse_remote(args)
 
-      SimpleCov.lap
+      SimpleCov.lap unless ENV['CI']
 
       $exec_args[2]
     end
