@@ -16,6 +16,10 @@ end
 
 ROOT = Pathname.new(__FILE__).parent.parent
 
+$:.unshift (ROOT + 'lib').to_s
+
+require 'git/browse/remote'
+
 def git(*args)
   out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
   if status != 0
