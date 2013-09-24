@@ -3,6 +3,17 @@ require 'tmpdir'
 require 'pathname'
 require 'open3'
 
+unless ENV['CI']
+  require 'simplecov'
+
+  module SimpleCov
+    def self.lap
+      @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
+      SimpleCov::ResultMerger.store_result(@result)
+    end
+  end
+end
+
 ROOT = Pathname.new(__FILE__).parent.parent
 
 def git(*args)
@@ -21,19 +32,44 @@ RSpec.configure do |config|
 
     git :init
 
-    FileUtils.copy_file ROOT + 'spec/data/gitconfig', '.git/config'
+    git :remote, 'add', 'origin', 'https://github.com/user/repo.git'
+    git :remote, 'add', 'origin2', 'git@gh-mirror.host:user/repo2'
 
     FileUtils.copy_file ROOT + 'README.md', 'README.md'
     git :add, 'README.md'
-    git :commit, '-m' 'first commit'
+    git :commit, '-m' '1st commit'
 
-    git :commit, '-m' 'second commit', '--allow-empty'
+    git :commit, '-m' '2nd commit', '--allow-empty'
 
     git :checkout, '-b', 'branch-1'
 
     git :commit, '-m' 'branched commit', '--allow-empty'
 
     git :checkout, 'master'
+
+    git :commit, '-m' '3rd commit (tagged)', '--allow-empty'
+    git :tag, 'tag-a'
+
+    git :commit, '-m' '4th commit (remote HEAD)', '--allow-empty'
+    git :remote, 'add',     'local-remote', '.git'
+    git :remote, 'update',  'local-remote'
+    git :remote, 'set-url', 'local-remote', 'https://github.com/user/repo3.git'
+
+    git :commit, '-m' '5th commit', '--allow-empty'
+
+    git :commit, '-m' '6th commit', '--allow-empty'
+
+    # system 'git log --abbrev-commit --oneline --decorate --graph --all'
+    # the commit graph looks like below;
+    #
+    # * e6b5d6f (local-remote/branch-1, branch-1) branched commit
+    # | * 03b1d4d (HEAD, master) 6th commit
+    # | * b591899 5th commit
+    # | * 3139e94 (local-remote/master) 4th commit (remote HEAD)
+    # | * a423770 (tag: tag-a) 3rd commit (tagged)
+    # |/
+    # * 06f6ebb 2nd commit
+    # * ff7b92b 1st commit
   end
 
   config.after(:all) do
@@ -68,6 +104,17 @@ def branch_sha1
   @branch_sha1 ||= git('rev-parse', 'branch-1').chomp
 end
 
+module Kernel
+  def exec(*args)
+    $exec_args = args
+  end
+end
+
+def git_browse_remote(args)
+  ARGV.replace(args)
+  load ROOT + 'bin/git-browse-remote', true
+end
+
 def with_args(*args, &block)
   description = if args.empty?
     '(no arguments)'
@@ -76,13 +123,29 @@ def with_args(*args, &block)
   end
 
   describe description do
-    subject { %x(#{RbConfig.ruby} #{command} #{args.join(' ')}).chomp }
+    subject do
+      SimpleCov.start unless ENV['CI']
+
+      git_browse_remote(args)
+
+      SimpleCov.lap unless ENV['CI']
+
+      $exec_args[2]
+    end
 
     it(&block)
   end
 end
 
 describe 'git-browse-remote' do
+  with_args '--init' do
+    should_not be_nil
+  end
+
+  with_args '--init', 'gh-mirror.host=github' do
+    should_not be_nil
+  end
+
   with_args do
     should navigate_to('https://github.com/user/repo')
   end
@@ -153,18 +216,49 @@ describe 'git-browse-remote' do
     with_args do
       should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
     end
+
+    with_args 'HEAD' do
+      should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
+    end
+  end
+
+  context 'on tag' do
+    before { git :checkout, 'tag-a' }
+
+    with_args do
+      should navigate_to("https://github.com/user/repo/tree/tag-a")
+    end
   end
 
   with_args '--remote', 'origin2' do
-    should navigate_to("https://github.com/user/repo2")
+    should navigate_to("https://gh-mirror.host/user/repo2")
   end
 
   with_args '-r', 'origin2' do
-    should navigate_to("https://github.com/user/repo2")
+    should navigate_to("https://gh-mirror.host/user/repo2")
   end
 
   with_args '-r', 'origin2', '--rev' do
-    should navigate_to("https://github.com/user/repo2/commit/#{master_sha1}")
+    should navigate_to("https://gh-mirror.host/user/repo2/commit/#{master_sha1}")
   end
 
+  with_args 'README.md' do
+    should navigate_to("https://github.com/user/repo/blob/master/README.md")
+  end
+
+  with_args 'origin2' do
+    should navigate_to("https://gh-mirror.host/user/repo2/commit/#{master_sha1}") # FIXME bug, should be in top mode
+  end
+
+  context 'on remote branch' do
+    before { git :checkout, 'local-remote/master' }
+
+    with_args do
+      should navigate_to("https://github.com/user/repo3")
+    end
+  end
+
+  it 'should abort on invalid ref' do
+    expect { git_browse_remote([ 'xxx-nonexistent-ref' ]) }.to raise_error SystemExit
+  end
 end
