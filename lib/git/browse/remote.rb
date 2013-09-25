@@ -1,10 +1,5 @@
 require 'optparse'
-
-module Git
-  module Browse
-    module Remote; end
-  end
-end
+require 'git/browse/remote/version'
 
 module Git::Browse::Remote
   module Git
