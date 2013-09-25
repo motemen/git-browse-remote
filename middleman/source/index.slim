@@ -1,13 +1,14 @@
 .container
   .jumbotron
     h1#logo git-browse-remote
-    small helps viewing repositories on the web e.g. GitHub in your browser.
+    p
+      small helps viewing repositories on the web e.g. GitHub in your browser.
     a.btn.btn-primary href="https://github.com/motemen/git-browse-remote" View on GitHub
 
   section#installation
     .page-header
       h1 Installation
-    pre
+    pre.command-line
       | gem install git-browse-remote
 
   section#introduction
@@ -16,46 +17,103 @@
     section
       p
         | Just run <code>git browse-remote</code> on your GitHub-cloned repository.
-        | This opens URL according to what branch you are on e.g.
+          This opens URL according to what branch you are on e.g.
       dl.dl-horizontal
         dt On master
-        dd opens project page (ex. https://github.com/motemen/git-browse-remote)
+        dd opens project page (<a href="https://github.com/motemen/git-browse-remote">for example</a>).
         dt On some branch
-        dd opens branch page (ex. https://github.com/motemen/git-browse-remote/tree/refactor)
+        dd opens branch page (<a href="https://github.com/motemen/git-browse-remote/tree/refactor">for example</a>).
+
     section
       h2 To point your commit to someone
       p
-        ' Sometimes you will need to include revision SHA-1 in the URL for later reference.
-        ' (ex. sharing an URL of an intensively developed branch on IRC)
+        | Sometimes you will need to include revision SHA-1 in the URL for later reference.
+          (ex. sharing an URL of an intensively developed branch on IRC)
       p
         ' Use <code>--rev</code> option to force revision-based page.
-        ' For example you will get https://github.com/motemen/git-browse-remote/commit/85c22bd0a11c3c36318789616ff63b767ffd7daf.
+
+      .example
+        pre.command-line
+          | git browse-remote --rev
+        p
+          | will navigate you to the commit page (
+          a href="https://github.com/motemen/git-browse-remote/commit/85c22bd0a11c3c36318789616ff63b767ffd7daf"
+            | for example
+          | ).
     section
       h2 To browse a specific file (at specific line)
       p
-        ' Use <code>-- <var>path</var></code> and <code>-L<var>line</var></code>
+        ' Use <code>-- <var>path</var></code> and <code>-L <var>line</var></code>
         ' to specify a file and a line number.
+      .example
+        pre.command-line
+          | git browse-remote -L1 -- .gitignore
+        p
+          | will navigate you to the file at line 1 (
+          a href="https://github.com/motemen/git-browse-remote/blob/master/.gitignore#L1"
+            | for example
+          | ).
 
     section
       h2 Specifying a commit
       p
-        ' To inspect a specific commit, just pass it in the arguments.
+        ' To inspect a specific branch/commit, just pass it in the arguments.
+      .example
+        pre.command-line
+          | git browse-remote refactor
+        p
+          | will navigate you to the branch page (
+          a href="https://github.com/motemen/git-browse-remote/tree/refactor"
+            | for example
+          | ).
+      .example
+        pre.command-line
+          | git browse-remote HEAD~1
+        p
+          | will navigate you to the commit page (
+          a href="https://github.com/motemen/git-browse-remote/commit/7598d219bc485fb37dd559f47df580ffcfbb8d83"
+            | for example
+          | ).
 
   section#usage
     .page-header
       h1 Usage
     pre
-      | git browse-remote [-r|--remote &lt;remote>] [--top|--rev|--ref] [-L &lt;n> [&lt;commit> | &lt;remote>] [&lt;file>]
-    markdown:
-      `git-browse-remote` opens your web browser by `git web--browse` to show current repository in browser.
+      | git browse-remote [-r|--remote &lt;remote&gt;] [--top|--rev|--ref] [-l &lt;n&gt;] [&lt;commit-or-remote&gt;] [--] [&lt;file&gt;]
 
-      `git-browse-remote` depends on what commit/ref `HEAD` points (or you supplied by an argument), such as:
+    h2 Parameters
 
-       * When on "master", opens repository's top page ("top" mode)
-         * e.g. opens https://github.com/motemen/git-browse-remote
-       * When on another branch/tag, opens repository's branch/tag page ("ref" mode)
-         * e.g. opens https://github.com/motemen/git-browse-remote/tree/master
-       * Otherwise, opens repository's commit page ("rev" mode)
-         * e.g. opens https://github.com/motemen/git-browse-remote/commit/04f7c64ba9d524cf311a673ddce5722b2441e2ea
+    h3 <code>-r</code>,<code>--remote</code> <var>REMOTE</var>
+    p Specifies remote (default: "origin"). Remote is used to decide the URL to open.
 
-      As a special case, if <var>commit</var> is invalid and an valid remote name, that remore repository's page is opened.
+    h3 <code>--top</code>
+    p Forces "top" mode (opens project top page).
+
+    h3 <code>--rev</code>
+    p Forces "rev" mode (opens commit page).
+
+    h3 <code>--ref</code>
+    p Forces "ref" mode (opens branch/tag page, may fail if none available).
+
+    h3 <code>-L</code> <var>LINE</var>
+    p Specifies file line (only meaningful when FILE specified).
+
+    h3 <var>COMMIT-or-REMOTE</var>
+    p Specifies target commit (default: "HEAD"). Recognized as remote if equals to one of remotes.
+
+    h3 <var>FILE</var>
+    p Specifies a single file to view.
+
+    h2 Determining which view to open
+    p If none of <code>--top</code>, <code>--rev</code>, <code>--ref</code> is supplied, 
+    ol
+      li If the target (specified as the argument or "HEAD") points to a branch that is named "master", opens project top ("top" mode).
+      li If the target points to a branch or a tag, opens that ref's page ("ref" mode).
+      li Otherwise, opens the corresponding revision's page ("rev" mode).
+      li If <var>FILE</var> is specified, opens that file's page. URL depends on whether the mode is "ref" or "rev".
+
+  section#author
+    .page-header
+      h1 Author
+    address
+      | motemen &lt;motemen@gmail.com&gt;
