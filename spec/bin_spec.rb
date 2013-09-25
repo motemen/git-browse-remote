@@ -8,8 +8,10 @@ unless ENV['CI']
 
   module SimpleCov
     def self.lap
-      @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
-      SimpleCov::ResultMerger.store_result(@result)
+      if running
+        @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
+        SimpleCov::ResultMerger.store_result(@result)
+      end
     end
   end
 end
@@ -21,7 +23,13 @@ $:.unshift (ROOT + 'lib').to_s
 require 'git/browse/remote'
 
 def git(*args)
-  out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
+  if Open3.method_defined? :capture3
+    out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
+  else
+    out = `git #{args.map { |arg| arg.to_s.shellescape }.join(' ')}`
+    status = $?.to_i
+  end
+
   if status != 0
     abort "git #{args.join(' ')} failed: #{err}"
   end

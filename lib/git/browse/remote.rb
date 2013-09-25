@@ -210,10 +210,10 @@ module Git::Browse::Remote
 
     def _ref(short = false)
       if short
-        @ref.sub(%r(^refs/), '')
-            .sub(%r(^heads/), '')
-            .sub(%r(^tags/), '')
-            .sub(%r(^remotes/([^/]+)/), '')
+        @ref.sub(%r(^refs/), '').
+             sub(%r(^heads/), '').
+             sub(%r(^tags/), '').
+             sub(%r(^remotes/([^/]+)/), '')
       else
         @ref
       end
