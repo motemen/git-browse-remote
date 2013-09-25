@@ -1,0 +1,14 @@
+body {
+  font-size: 16px;
+}
+
+pre {
+  font-size: 18px;
+  padding: 18px;
+  border: none;
+}
+
+.container {
+  margin-left: 20%;
+  margin-right: 20%;
+}

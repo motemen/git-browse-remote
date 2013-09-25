@@ -1,0 +1,61 @@
+.container
+  .jumbotron
+    h1#logo git-browse-remote
+    small helps viewing repositories on the web e.g. GitHub in your browser.
+    a.btn.btn-primary href="https://github.com/motemen/git-browse-remote" View on GitHub
+
+  section#installation
+    .page-header
+      h1 Installation
+    pre
+      | gem install git-browse-remote
+
+  section#introduction
+    .page-header
+      h1 Quick introduction
+    section
+      p
+        | Just run <code>git browse-remote</code> on your GitHub-cloned repository.
+        | This opens URL according to what branch you are on e.g.
+      dl.dl-horizontal
+        dt On master
+        dd opens project page (ex. https://github.com/motemen/git-browse-remote)
+        dt On some branch
+        dd opens branch page (ex. https://github.com/motemen/git-browse-remote/tree/refactor)
+    section
+      h2 To point your commit to someone
+      p
+        ' Sometimes you will need to include revision SHA-1 in the URL for later reference.
+        ' (ex. sharing an URL of an intensively developed branch on IRC)
+      p
+        ' Use <code>--rev</code> option to force revision-based page.
+        ' For example you will get https://github.com/motemen/git-browse-remote/commit/85c22bd0a11c3c36318789616ff63b767ffd7daf.
+    section
+      h2 To browse a specific file (at specific line)
+      p
+        ' Use <code>-- <var>path</var></code> and <code>-L<var>line</var></code>
+        ' to specify a file and a line number.
+
+    section
+      h2 Specifying a commit
+      p
+        ' To inspect a specific commit, just pass it in the arguments.
+
+  section#usage
+    .page-header
+      h1 Usage
+    pre
+      | git browse-remote [-r|--remote &lt;remote>] [--top|--rev|--ref] [-L &lt;n> [&lt;commit> | &lt;remote>] [&lt;file>]
+    markdown:
+      `git-browse-remote` opens your web browser by `git web--browse` to show current repository in browser.
+
+      `git-browse-remote` depends on what commit/ref `HEAD` points (or you supplied by an argument), such as:
+
+       * When on "master", opens repository's top page ("top" mode)
+         * e.g. opens https://github.com/motemen/git-browse-remote
+       * When on another branch/tag, opens repository's branch/tag page ("ref" mode)
+         * e.g. opens https://github.com/motemen/git-browse-remote/tree/master
+       * Otherwise, opens repository's commit page ("rev" mode)
+         * e.g. opens https://github.com/motemen/git-browse-remote/commit/04f7c64ba9d524cf311a673ddce5722b2441e2ea
+
+      As a special case, if <var>commit</var> is invalid and an valid remote name, that remore repository's page is opened.
