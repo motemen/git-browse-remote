@@ -250,10 +250,8 @@ describe 'git-browse-remote' do
     should navigate_to("https://github.com/user/repo/blob/master/README.md")
   end
 
-  pending('FIXME bug, should be in top mode') do
-    with_args 'origin2' do
-      should navigate_to("https://gh-mirror.host/user/repo2")
-    end
+  with_args 'origin2' do
+    should navigate_to("https://gh-mirror.host/user/repo2")
   end
 
   context 'on remote branch' do
