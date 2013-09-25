@@ -36,6 +36,9 @@ RSpec.configure do |config|
 
     git :init
 
+    git :config, '--local', 'user.email', 'gbr@example.com'
+    git :config, '--local', 'user.name',  'git-browse-remote tester'
+
     git :remote, 'add', 'origin', 'https://github.com/user/repo.git'
     git :remote, 'add', 'origin2', 'git@gh-mirror.host:user/repo2'
 
