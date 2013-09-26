@@ -88,31 +88,59 @@ describe Git::Browse::Remote::Core do
     end
   end
 
-  describe '#rev' do
-    context 'if #mode is not :rev' do
-      before { code.stub(:mode).and_return(:rev) }
+  describe '#_rev' do
+    context 'if #mode is :ref (not :rev)' do
+      before { core.stub(:mode).and_return(:ref) }
 
       context 'and #_ref is not defined' do
-        xit 'returns the #_commit value'
+        it 'returns the #_commit value' do
+          core.should_receive(:_commit).and_return('0000000000000000000000000000000000000000')
+          expect(core._rev).to eq('0000000000000000000000000000000000000000')
+        end
       end
 
       context 'and #_ref is defined' do
-        xit 'returns the #_ref value'
+        it 'returns the #_ref value' do
+          core.should_receive(:_ref).and_return('a-ref')
+          expect(core._rev).to eq('a-ref')
+        end
       end
     end
 
     context 'if #mode is :rev' do
+      before { core.stub(:mode).and_return(:rev) }
+
       context 'and #_ref is not defined' do
-        xit 'returns the #_commit value'
+        it 'returns the #_commit value' do
+          core.should_receive(:_commit).and_return('0000000000000000000000000000000000000000')
+          expect(core._rev).to eq('0000000000000000000000000000000000000000')
+        end
       end
 
       context 'and #_ref is defined' do
-        xit 'returns the #_commit value though'
+        it 'returns the #_commit value though' do
+          core.stub(:_ref).and_return('a-ref')
+          core.should_receive(:_commit).and_return('0000000000000000000000000000000000000000')
+          expect(core._rev).to eq('0000000000000000000000000000000000000000')
+        end
       end
     end
   end
 
-  describe '#ref' do
+  describe '#short_ref' do
+    context 'if @ref is "refs/heads/master"' do
+      before { core.instance_variable_set :@ref, 'refs/heads/master' }
+      it 'should be "master"' do
+        expect(core.short_ref).to eq('master')
+      end
+    end
+
+    context 'if @ref is "refs/heads/fix/some/bug' do
+      before { core.instance_variable_set :@ref, 'refs/heads/fix/some/bug' }
+      it 'should be "fix/some/bug"' do
+        expect(core.short_ref).to eq('fix/some/bug')
+      end
+    end
   end
 
   describe '#target' do
