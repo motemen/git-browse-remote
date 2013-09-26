@@ -135,17 +135,25 @@ describe Git::Browse::Remote::Core do
       end
     end
 
-    context 'if @ref is "refs/heads/fix/some/bug' do
+    context 'if @ref is "refs/heads/fix/some/bug"' do
       before { core.instance_variable_set :@ref, 'refs/heads/fix/some/bug' }
       it 'should be "fix/some/bug"' do
         expect(core.short_ref).to eq('fix/some/bug')
       end
     end
-  end
 
-  describe '#target' do
-  end
+    context 'if @ref is "refs/tags/v0.0.1"' do
+      before { core.instance_variable_set :@ref, 'refs/tags/v0.0.1' }
+      it 'should be "v0.0.1"' do
+        expect(core.short_ref).to eq('v0.0.1')
+      end
+    end
 
-  describe '#url' do
+    context 'if @ref is "refs/remotes/origin/foo/bar"' do
+      before { core.instance_variable_set :@ref, 'refs/remotes/origin/foo/bar' }
+      it 'should be "foo/bar"' do
+        expect(core.short_ref).to eq('foo/bar')
+      end
+    end
   end
 end
