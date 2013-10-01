@@ -3,7 +3,7 @@ git-browse-remote
 
 `git-browse-remote` helps viewing remote repositories e.g. GitHub in your browser.
 
-USAGE
+Usage
 -----
 
 ```
@@ -23,7 +23,7 @@ git browse-remote [-r|--remote <remote>] [--top|--rev|--ref] [-L <n> [<commit> |
 
 As a special case, if <var>commit</var> is invalid and an valid remote name, that remore repository's page is opened.
 
-HOW TO SET UP
+How to set up
 -------------
 
 `git browse-remote` stores url mapping in ~/.gitconfig.
@@ -50,7 +50,7 @@ Especially, if you have a GitHub Enterprise repository, run
 
 to easyly setup url mappings. `--init <host>=gitweb` is also available.
 
-VARIABLES AVAILABLE IN URL TEMPLATE
+Variables available in url template
 -----------------------------------
 
  * `host` (eg. "github.com")
@@ -64,3 +64,11 @@ VARIABLES AVAILABLE IN URL TEMPLATE
  * `short_rev` (short_ref or short_commit)
  * `file` (eg. "bin/git-browse-remote")
  * `line` (eg. 30)
+
+## Contributing
+
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request

@@ -8,16 +8,28 @@ unless ENV['CI']
 
   module SimpleCov
     def self.lap
-      @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
-      SimpleCov::ResultMerger.store_result(@result)
+      if running
+        @result = SimpleCov::Result.new(Coverage.result.merge_resultset(SimpleCov::ResultMerger.merged_result.original_result))
+        SimpleCov::ResultMerger.store_result(@result)
+      end
     end
   end
 end
 
 ROOT = Pathname.new(__FILE__).parent.parent
 
+$:.unshift (ROOT + 'lib').to_s
+
+require 'git/browse/remote'
+
 def git(*args)
-  out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
+  if Open3.methods(false).include? :capture3
+    out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
+  else
+    out = `git #{args.map { |arg| arg.to_s.shellescape }.join(' ')}`
+    status = $?.to_i
+  end
+
   if status != 0
     abort "git #{args.join(' ')} failed: #{err}"
   end
@@ -31,6 +43,9 @@ RSpec.configure do |config|
     Dir.chdir @tmpdir
 
     git :init
+
+    git :config, '--local', 'user.email', 'gbr@example.com'
+    git :config, '--local', 'user.name',  'git-browse-remote tester'
 
     git :remote, 'add', 'origin', 'https://github.com/user/repo.git'
     git :remote, 'add', 'origin2', 'git@gh-mirror.host:user/repo2'
@@ -246,10 +261,8 @@ describe 'git-browse-remote' do
     should navigate_to("https://github.com/user/repo/blob/master/README.md")
   end
 
-  pending('FIXME bug, should be in top mode') do
-    with_args 'origin2' do
-      should navigate_to("https://gh-mirror.host/user/repo2")
-    end
+  with_args 'origin2' do
+    should navigate_to("https://gh-mirror.host/user/repo2")
   end
 
   context 'on remote branch' do
