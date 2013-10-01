@@ -23,7 +23,7 @@ $:.unshift (ROOT + 'lib').to_s
 require 'git/browse/remote'
 
 def git(*args)
-  if Open3.method_defined? :capture3
+  if Open3.methods(false).include? :capture3
     out, err, status = Open3.capture3('git', *args.map { |arg| arg.to_s })
   else
     out = `git #{args.map { |arg| arg.to_s.shellescape }.join(' ')}`
