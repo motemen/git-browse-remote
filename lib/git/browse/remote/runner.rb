@@ -1,4 +1,5 @@
 require 'git/browse/remote/core'
+require 'git/browse/remote/version'
 require 'optparse'
 
 module Git::Browse::Remote
@@ -27,7 +28,8 @@ module Git::Browse::Remote
 
     def run
       OptionParser.new do |opt|
-        opt.banner = 'git browse-remote [options] [<commit> | <remote>]'
+        opt.banner  = 'git browse-remote [options] [<commit> | <remote>] [--] [<file>]'
+        opt.version = VERSION
         opt.on('-r', '--remote=<remote>', 'specify remote') { |r| @core.remote = r }
 
         opt.on('--top', 'open `top` page') { @core.mode = :top }
