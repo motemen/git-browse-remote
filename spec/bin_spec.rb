@@ -18,7 +18,7 @@ end
 
 ROOT = Pathname.new(__FILE__).parent.parent
 
-$:.unshift (ROOT + 'lib').to_s
+$:.unshift ROOT.join('lib').to_s
 
 require 'git/browse/remote'
 
@@ -33,7 +33,8 @@ def git(*args)
   if status != 0
     abort "git #{args.join(' ')} failed: #{err}"
   end
-  out
+
+  out[/.*/]
 end
 
 RSpec.configure do |config|
@@ -41,6 +42,8 @@ RSpec.configure do |config|
     @pwd = Dir.pwd
     @tmpdir = Dir.mktmpdir
     Dir.chdir @tmpdir
+
+    @sha1 = {}
 
     git :init
 
@@ -59,6 +62,7 @@ RSpec.configure do |config|
     git :checkout, '-b', 'branch-1'
 
     git :commit, '-m' 'branched commit', '--allow-empty'
+    @sha1[:'branch-1'] = git 'rev-parse', 'HEAD'
 
     git :checkout, 'master'
 
@@ -71,8 +75,10 @@ RSpec.configure do |config|
     git :remote, 'set-url', 'local-remote', 'https://github.com/user/repo3.git'
 
     git :commit, '-m' '5th commit', '--allow-empty'
+    @sha1[:'master~1'] = git 'rev-parse', 'HEAD'
 
     git :commit, '-m' '6th commit', '--allow-empty'
+    @sha1[:master]  = git 'rev-parse', 'HEAD'
 
     # system 'git log --abbrev-commit --oneline --decorate --graph --all'
     # the commit graph looks like below;
@@ -97,28 +103,6 @@ RSpec.configure do |config|
   end
 end
 
-RSpec::Matchers.define :navigate_to do |expected|
-  match do |actual|
-    expected === actual
-  end
-end
-
-def command
-  ROOT + 'bin/git-browse-remote'
-end
-
-def master_sha1
-  @master_sha1 ||= git('rev-parse', 'master').chomp
-end
-
-def parent_sha1
-  @parent_sha1 ||= git('rev-parse', 'master^1').chomp
-end
-
-def branch_sha1
-  @branch_sha1 ||= git('rev-parse', 'branch-1').chomp
-end
-
 module Kernel
   def exec(*args)
     $exec_args = args
@@ -126,150 +110,207 @@ module Kernel
 end
 
 def git_browse_remote(args)
-  ARGV.replace(args)
-  load ROOT + 'bin/git-browse-remote', true
+  begin
+    SimpleCov.start unless ENV['CI']
+    ARGV.replace(args)
+    load ROOT + 'bin/git-browse-remote', true
+    true
+  rescue
+    false
+  ensure
+    SimpleCov.lap unless ENV['CI']
+  end
 end
 
-def with_args(*args, &block)
-  description = if args.empty?
-    '(no arguments)'
+def opened_url
+  git_browse_remote(args)
+
+  if $exec_args[0..1] == [ 'git', 'web--browse' ]
+    $exec_args[2]
   else
-    args.join(' ')
+    nil
   end
+end
 
-  describe description do
-    subject do
-      SimpleCov.start unless ENV['CI']
-
-      git_browse_remote(args)
-
-      SimpleCov.lap unless ENV['CI']
-
-      $exec_args[2]
-    end
-
-    it(&block)
+def when_run_with_args(*args, &block)
+  context "when run with args #{args}" do
+    let(:args) { args }
+    instance_eval(&block)
   end
 end
 
 describe 'git-browse-remote' do
-  with_args '--init' do
-    should_not be_nil
+  when_run_with_args '--init' do
+    it 'should run successfully' do
+      expect(git_browse_remote(args)).to be(true)
+    end
   end
 
-  with_args '--init', 'gh-mirror.host=github' do
-    should_not be_nil
+  when_run_with_args '--init', 'gh-mirror.host=github' do
+    it 'should run successfully' do
+      expect(git_browse_remote(args)).to be(true)
+    end
   end
 
-  with_args do
-    should navigate_to('https://github.com/user/repo')
-  end
+  context 'when on master' do
+    when_run_with_args do
+      it 'should open top page' do
+        expect(opened_url).to eq("https://github.com/user/repo")
+      end
+    end
 
-  with_args '--top' do
-    should navigate_to('https://github.com/user/repo')
-  end
+    when_run_with_args '--top' do
+      it 'should open top page' do
+        expect(opened_url).to eq("https://github.com/user/repo")
+      end
+    end
 
-  with_args '--rev' do
-    should navigate_to("https://github.com/user/repo/commit/#{master_sha1}")
-  end
+    when_run_with_args '--rev' do
+      it 'should open rev page' do
+        expect(opened_url).to eq("https://github.com/user/repo/commit/#{@sha1[:master]}")
+      end
+    end
 
-  with_args '--ref' do
-    should navigate_to('https://github.com/user/repo/tree/master')
-  end
+    when_run_with_args '--ref' do
+      it 'should open ref page' do
+        expect(opened_url).to eq("https://github.com/user/repo/tree/master")
+      end
+    end
 
-  with_args 'HEAD~1' do
-    should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
-  end
+    when_run_with_args 'HEAD~1' do
+      it 'should open previous rev\'s page' do
+        expect(opened_url).to eq("https://github.com/user/repo/commit/#{@sha1[:'master~1']}")
+      end
+    end
 
-  with_args 'master' do
-    should navigate_to("https://github.com/user/repo")
-  end
+    when_run_with_args 'master' do
+      it 'should open top page' do
+        expect(opened_url).to eq("https://github.com/user/repo")
+      end
+    end
 
-  with_args '--', 'README.md' do
-    should navigate_to("https://github.com/user/repo/blob/master/README.md")
-  end
+    when_run_with_args '--', 'README.md' do
+      it 'should open the file page' do
+        expect(opened_url).to eq("https://github.com/user/repo/blob/master/README.md")
+      end
+    end
 
-  with_args '--rev', '--', 'README.md' do
-    should navigate_to("https://github.com/user/repo/blob/#{master_sha1[0..6]}/README.md")
-  end
+    when_run_with_args '--rev', '--', 'README.md' do
+      it 'should open the file page by revision' do
+        expect(opened_url).to eq("https://github.com/user/repo/blob/#{@sha1[:master][0..6]}/README.md")
+      end
+    end
 
-  with_args '-L3', '--', 'README.md' do
-    should navigate_to("https://github.com/user/repo/blob/master/README.md#L3")
-  end
+    when_run_with_args '-L3', '--', 'README.md' do
+      it 'should open the file at the specified line' do
+        expect(opened_url).to eq("https://github.com/user/repo/blob/master/README.md#L3")
+      end
+    end
 
-  with_args 'branch-1' do
-    should navigate_to("https://github.com/user/repo/tree/branch-1")
-  end
+    when_run_with_args 'branch-1' do
+      it 'should open the branch page' do
+        expect(opened_url).to eq("https://github.com/user/repo/tree/branch-1")
+      end
+    end
 
-  with_args '--rev', 'branch-1' do
-    should navigate_to("https://github.com/user/repo/commit/#{branch_sha1}")
+    when_run_with_args '--rev', 'branch-1' do
+      it 'should open the rev page of the branch' do
+        expect(opened_url).to eq("https://github.com/user/repo/commit/#{@sha1[:'branch-1']}")
+      end
+    end
+
+    when_run_with_args '--remote', 'origin2' do
+      it 'should open the specified remote page' do
+        expect(opened_url).to eq("https://gh-mirror.host/user/repo2")
+      end
+    end
+
+    when_run_with_args '-r', 'origin2' do
+      it 'should open the specified remote page' do
+        expect(opened_url).to eq("https://gh-mirror.host/user/repo2")
+      end
+    end
+
+    when_run_with_args '-r', 'origin2', '--rev' do
+      it 'should open the specified remote page and the revision' do
+        expect(opened_url).to eq("https://gh-mirror.host/user/repo2/commit/#{@sha1[:master]}")
+      end
+    end
+
+    when_run_with_args 'README.md' do
+      it 'should open file file page' do
+        expect(opened_url).to eq("https://github.com/user/repo/blob/master/README.md")
+      end
+    end
+
+    when_run_with_args 'origin2' do
+      it 'should open the remote' do
+        expect(opened_url).to eq("https://gh-mirror.host/user/repo2")
+      end
+    end
   end
 
   context 'on some branch' do
     before { git :checkout, 'branch-1' }
 
-    with_args do
-      should navigate_to("https://github.com/user/repo/tree/branch-1")
+    when_run_with_args do
+      it 'should open the current branch page' do
+        expect(opened_url).to eq("https://github.com/user/repo/tree/branch-1")
+      end
     end
 
-    with_args '--top' do
-      should navigate_to("https://github.com/user/repo")
+    when_run_with_args '--top' do
+      it 'should open the top page' do
+        expect(opened_url).to eq("https://github.com/user/repo")
+      end
     end
 
-    with_args '--rev' do
-      should navigate_to("https://github.com/user/repo/commit/#{branch_sha1}")
+    when_run_with_args '--rev' do
+      it 'should open the revision page of current HEAD' do
+        expect(opened_url).to eq("https://github.com/user/repo/commit/#{@sha1[:'branch-1']}")
+      end
     end
 
-    with_args 'README.md' do
-      should navigate_to("https://github.com/user/repo/blob/branch-1/README.md")
+    when_run_with_args 'README.md' do
+      it 'should open the file page at current branch' do
+        expect(opened_url).to eq("https://github.com/user/repo/blob/branch-1/README.md")
+      end
     end
   end
 
   context 'on detached HEAD' do
     before { git :checkout, 'HEAD~1' }
 
-    with_args do
-      should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
+    when_run_with_args do
+      it 'should open the revision page' do
+        expect(opened_url).to eq("https://github.com/user/repo/commit/#{@sha1[:'master~1']}")
+      end
     end
 
-    with_args 'HEAD' do
-      should navigate_to("https://github.com/user/repo/commit/#{parent_sha1}")
+    when_run_with_args 'HEAD' do
+      it 'should open the revision page' do
+        expect(opened_url).to eq("https://github.com/user/repo/commit/#{@sha1[:'master~1']}")
+      end
     end
   end
 
   context 'on tag' do
     before { git :checkout, 'tag-a' }
 
-    with_args do
-      should navigate_to("https://github.com/user/repo/tree/tag-a")
+    when_run_with_args do
+      it 'should open the tag page' do
+        expect(opened_url).to eq("https://github.com/user/repo/tree/tag-a")
+      end
     end
-  end
-
-  with_args '--remote', 'origin2' do
-    should navigate_to("https://gh-mirror.host/user/repo2")
-  end
-
-  with_args '-r', 'origin2' do
-    should navigate_to("https://gh-mirror.host/user/repo2")
-  end
-
-  with_args '-r', 'origin2', '--rev' do
-    should navigate_to("https://gh-mirror.host/user/repo2/commit/#{master_sha1}")
-  end
-
-  with_args 'README.md' do
-    should navigate_to("https://github.com/user/repo/blob/master/README.md")
-  end
-
-  with_args 'origin2' do
-    should navigate_to("https://gh-mirror.host/user/repo2")
   end
 
   context 'on remote branch' do
     before { git :checkout, 'local-remote/master' }
 
-    with_args do
-      should navigate_to("https://github.com/user/repo3")
+    when_run_with_args do
+      it 'should open the remote' do
+        expect(opened_url).to eq("https://github.com/user/repo3")
+      end
     end
   end
 
