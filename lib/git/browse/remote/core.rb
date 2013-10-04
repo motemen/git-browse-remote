@@ -24,8 +24,8 @@ module Git::Browse::Remote
       end
 
       if target
-        if Git.is_valid_ref? target
-          @ref = Git.full_name_of_ref(target)
+        if Git.is_valid_rev? target
+          @ref = Git.full_name_of_rev(target)
         elsif Git.is_valid_remote? target
           @remote, @ref = target, 'master'
         else
