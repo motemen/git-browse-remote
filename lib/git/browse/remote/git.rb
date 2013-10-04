@@ -1,6 +1,6 @@
 module Git::Browse::Remote
   module Git
-    def self.is_valid_ref?(target)
+    def self.is_valid_rev?(target)
       `git rev-parse --verify --quiet #{target}` && $? == 0
     end
 
@@ -16,8 +16,8 @@ module Git::Browse::Remote
       `git rev-parse --short #{ref}`.chomp
     end
 
-    def self.full_name_of_ref(ref)
-      `git rev-parse --symbolic-full-name #{ref}`.chomp
+    def self.full_name_of_rev(rev)
+      `git rev-parse --symbolic-full-name #{rev}`[/.+/] or `git rev-parse --symbolic-full-name #{name_rev(rev)}`[/.+/]
     end
 
     # the ref whom HEAD points to
@@ -25,8 +25,12 @@ module Git::Browse::Remote
       `git symbolic-ref -q HEAD`[/.+/]
     end
 
+    def self.name_rev(rev)
+      `git name-rev --name-only #{rev}`.chomp
+    end
+
     def self.symbolic_name_of_head
-      `git name-rev --name-only HEAD`.chomp.sub(%r(\^0$), '') # some workaround for ^0
+      name_rev('HEAD').sub(%r(\^0$), '') # some workaround for ^0
     end
   end
 end
