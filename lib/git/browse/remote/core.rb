@@ -70,8 +70,11 @@ module Git::Browse::Remote
       path.last.sub!(/\.git$/, '')
       path = Path.new(path)
 
-      template = `git config --get browse-remote.#{host}.#{template_type}`[/.+/] or
+      template = `git config --get browse-remote.#{host}.#{template_type}`[/.+/]
+      if not template and host == 'github.com'
+        template = MAPPING_RECIPES[:github][template_type.to_sym] or
           abort "No '#{template_type}' mapping found for #{host} (maybe `git browse-remote --init` required)"
+      end
 
       url = template.gsub(/\{(.+?)\}/) { |m| eval($1) }
     end

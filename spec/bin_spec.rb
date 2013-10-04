@@ -140,12 +140,6 @@ def when_run_with_args(*args, &block)
 end
 
 describe 'git-browse-remote' do
-  when_run_with_args '--init' do
-    it 'should run successfully' do
-      expect(git_browse_remote(args)).to be(true)
-    end
-  end
-
   when_run_with_args '--init', 'gh-mirror.host=github' do
     it 'should run successfully' do
       expect(git_browse_remote(args)).to be(true)
