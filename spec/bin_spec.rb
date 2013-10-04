@@ -314,6 +314,25 @@ describe 'git-browse-remote' do
     end
   end
 
+  context 'after changing branches' do
+    before {
+      git :checkout, 'branch-1'
+      git :checkout, 'master'
+    }
+
+    when_run_with_args 'HEAD@{1}' do
+      it 'should open the previous branch page' do
+        expect(opened_url).to eq("https://github.com/user/repo/tree/branch-1")
+      end
+    end
+
+    when_run_with_args '--ref', 'HEAD@{1}' do
+      it 'should open the previous branch page' do
+        expect(opened_url).to eq("https://github.com/user/repo/tree/branch-1")
+      end
+    end
+  end
+
   it 'should abort on invalid ref' do
     expect { git_browse_remote([ 'xxx-nonexistent-ref' ]) }.to raise_error SystemExit
   end
