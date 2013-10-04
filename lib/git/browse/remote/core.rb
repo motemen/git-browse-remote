@@ -10,11 +10,35 @@ module Git::Browse::Remote
   class Core
     attr_accessor :line, :file
 
+    MAPPING_RECIPES = {
+      :github => {
+        :top  => 'https://{host}/{path}',
+        :ref  => 'https://{host}/{path}/tree/{short_ref}',
+        :rev  => 'https://{host}/{path}/commit/{commit}',
+        :file => 'https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}'
+      },
+
+      :gitweb => {
+        :top => 'http://{host}/?p={path[-2..-1]}.git',
+        :ref => 'http://{host}/?p={path[-2..-1]}.git;h={ref}',
+        :rev => 'http://{host}/?p={path[-2..-1]}.git;a=commit;h={ref}',
+        # XXX
+        # I don't know file url of gitweb...
+      }
+    }
+
     def template_type
       if @file
         :file
       else
         mode
+      end
+    end
+
+    def init!(host, name)
+      mapping = MAPPING_RECIPES[name] or abort "Recipe '#{name}' not found"
+      mapping.each do |mode,template|
+        system %Q(git config --global browse-remote.#{host}.#{mode} '#{template}')
       end
     end
 
