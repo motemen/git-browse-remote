@@ -8,14 +8,15 @@ module Git::Browse::Remote
   end
 
   class Core
-    attr_accessor :line, :file
+    attr_accessor :line, :file, :dir
 
     MAPPING_RECIPES = {
       :github => {
         :top  => 'https://{host}/{path}',
         :ref  => 'https://{host}/{path}/tree/{short_ref}',
         :rev  => 'https://{host}/{path}/commit/{commit}',
-        :file => 'https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}'
+        :file => 'https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}',
+        :dir  => 'https://{host}/{path}/tree/{short_rev}/{dir}',
       },
 
       :gitweb => {
@@ -45,6 +46,17 @@ module Git::Browse::Remote
     def url
       if target && !@file && File.exists?(target)
         self.target, @file = nil, target
+      end
+
+      if @file && File.directory?(@file)
+        @mode = :dir
+        dirpath = Path.new(@file.split(/[\/:]+/))
+        if dirpath[0] == '.'
+          dirpath.shift
+          dirpath.unshift(Git.show_prefix.split(/[\/:]+/)).flatten!
+        end
+        @dir = dirpath.to_s
+        @file = nil
       end
 
       if target

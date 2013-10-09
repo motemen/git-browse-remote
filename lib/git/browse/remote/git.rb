@@ -32,5 +32,9 @@ module Git::Browse::Remote
     def self.symbolic_name_of_head
       name_rev('HEAD').sub(%r(\^0$), '') # some workaround for ^0
     end
+
+    def self.show_prefix
+      `git rev-parse --show-prefix`.chomp
+    end
   end
 end
