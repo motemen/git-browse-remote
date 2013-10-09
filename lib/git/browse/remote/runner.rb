@@ -15,6 +15,8 @@ module Git::Browse::Remote
         opt.version = VERSION
         opt.on('-r', '--remote=<remote>', 'specify remote') { |r| @core.remote = r }
 
+        opt.on('--stdout', 'prints URL instead of opening browser') { @stdout = true }
+
         opt.on('--top', 'open `top` page') { @core.mode = :top }
         opt.on('--rev', 'open `rev` page') { @core.mode = :rev }
         opt.on('--ref', 'open `ref` page') { @core.mode = :ref }
@@ -37,7 +39,11 @@ module Git::Browse::Remote
 
       @core.target, @core.file = *@args[0..1]
 
-      exec 'git', 'web--browse', @core.url
+      if @stdout
+        puts @core.url
+      else
+        exec 'git', 'web--browse', @core.url
+      end
     end
   end
 end
