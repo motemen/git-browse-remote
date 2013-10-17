@@ -1,4 +1,5 @@
 require 'git/browse/remote/git'
+require 'pathname'
 
 module Git::Browse::Remote
   class Path < Array
@@ -48,15 +49,16 @@ module Git::Browse::Remote
         self.target, @file = nil, target
       end
 
-      if @file && File.directory?(@file)
-        @mode = :dir
-        dirpath = Path.new(@file.split(/[\/:]+/))
-        if dirpath[0] == '.'
-          dirpath.shift
-          dirpath.unshift(Git.show_prefix.split(/[\/:]+/)).flatten!
+      if @file && File.exists?(@file)
+        path = Pathname(Git.show_prefix) + @file
+        if File.directory?(@file)
+          @mode = :dir
+          @dir  = path.cleanpath
+          @file = nil
+        else
+          @dir  = nil
+          @file = path.cleanpath
         end
-        @dir = dirpath.to_s
-        @file = nil
       end
 
       if target
