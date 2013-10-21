@@ -57,7 +57,10 @@ RSpec.configure do |config|
     git :add, 'README.md'
     git :commit, '-m' '1st commit'
 
-    git :commit, '-m' '2nd commit', '--allow-empty'
+    FileUtils.mkdir_p 'foo/bar'
+    FileUtils.touch   'foo/bar/baz.txt'
+    git :add, 'foo/bar/baz.txt'
+    git :commit, '-m' '2nd commit'
 
     git :checkout, '-b', 'branch-1'
 
@@ -323,6 +326,23 @@ describe 'git-browse-remote' do
     when_run_with_args '--ref', 'HEAD@{1}' do
       it 'should open the previous branch page' do
         expect(opened_url).to eq("https://github.com/user/repo/tree/branch-1")
+      end
+    end
+  end
+
+  when_run_with_args 'foo/bar' do
+    it 'should accept directory as an argument' do
+      expect(opened_url).to eq("https://github.com/user/repo/tree/master/foo/bar")
+    end
+  end
+
+  context 'when at non-toplevel directory' do
+    before { @_pwd = Dir.pwd; Dir.chdir 'foo' }
+    after { Dir.chdir @_pwd }
+
+    when_run_with_args '../README.md' do
+      it 'should resolve relative path' do
+        expect(opened_url).to eq("https://github.com/user/repo/blob/master/README.md")
       end
     end
   end
