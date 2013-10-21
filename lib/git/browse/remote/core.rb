@@ -8,16 +8,21 @@ module Git::Browse::Remote
     end
   end
 
+  class Filepath < Pathname
+    def to_s
+      Pathname.new(Git.show_prefix).join(super).cleanpath.to_s
+    end
+  end
+
   class Core
-    attr_accessor :line, :file, :dir
+    attr_accessor :line, :file
 
     MAPPING_RECIPES = {
       :github => {
         :top  => 'https://{host}/{path}',
         :ref  => 'https://{host}/{path}/tree/{short_ref}',
         :rev  => 'https://{host}/{path}/commit/{commit}',
-        :file => 'https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}',
-        :dir  => 'https://{host}/{path}/tree/{short_rev}/{dir}',
+        :file => 'https://{host}/{path}/{file.directory? and :tree or :blob}/{short_rev}/{file}{line && "#L%d" % line}',
       },
 
       :gitweb => {
@@ -50,15 +55,7 @@ module Git::Browse::Remote
       end
 
       if @file && File.exists?(@file)
-        path = Pathname(Git.show_prefix) + @file
-        if File.directory?(@file)
-          @mode = :dir
-          @dir  = path.cleanpath
-          @file = nil
-        else
-          @dir  = nil
-          @file = path.cleanpath
-        end
+        @file = Filepath.new(@file)
       end
 
       if target

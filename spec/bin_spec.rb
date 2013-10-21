@@ -345,6 +345,12 @@ describe 'git-browse-remote' do
         expect(opened_url).to eq("https://github.com/user/repo/blob/master/README.md")
       end
     end
+
+    when_run_with_args '.' do
+      it 'should resolve relative path' do
+        expect(opened_url).to eq("https://github.com/user/repo/tree/master/foo")
+      end
+    end
   end
 
   it 'should abort on invalid ref' do
