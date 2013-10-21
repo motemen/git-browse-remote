@@ -1,4 +1,5 @@
 require 'git/browse/remote/git'
+require 'pathname'
 
 module Git::Browse::Remote
   class Path < Array
@@ -8,14 +9,15 @@ module Git::Browse::Remote
   end
 
   class Core
-    attr_accessor :line, :file
+    attr_accessor :line, :file, :dir
 
     MAPPING_RECIPES = {
       :github => {
         :top  => 'https://{host}/{path}',
         :ref  => 'https://{host}/{path}/tree/{short_ref}',
         :rev  => 'https://{host}/{path}/commit/{commit}',
-        :file => 'https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}'
+        :file => 'https://{host}/{path}/blob/{short_rev}/{file}{line && "#L%d" % line}',
+        :dir  => 'https://{host}/{path}/tree/{short_rev}/{dir}',
       },
 
       :gitweb => {
@@ -45,6 +47,18 @@ module Git::Browse::Remote
     def url
       if target && !@file && File.exists?(target)
         self.target, @file = nil, target
+      end
+
+      if @file && File.exists?(@file)
+        path = Pathname(Git.show_prefix) + @file
+        if File.directory?(@file)
+          @mode = :dir
+          @dir  = path.cleanpath
+          @file = nil
+        else
+          @dir  = nil
+          @file = path.cleanpath
+        end
       end
 
       if target
