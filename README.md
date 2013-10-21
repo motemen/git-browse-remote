@@ -1,4 +1,4 @@
-git-browse-remote [![Build Status](https://travis-ci.org/motemen/git-browse-remote.png?branch=master)](https://travis-ci.org/motemen/git-browse-remote)
+git-browse-remote [![Build Status](https://travis-ci.org/motemen/git-browse-remote.png?branch=master)](https://travis-ci.org/motemen/git-browse-remote) [![Gem Version](https://badge.fury.io/rb/git-browse-remote.png)](http://badge.fury.io/rb/git-browse-remote)
 =================
 
 `git-browse-remote` helps viewing remote repositories e.g. GitHub in your browser.
