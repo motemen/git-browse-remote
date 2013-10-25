@@ -9,7 +9,7 @@ module Git::Browse::Remote
       @core = Core.new
     end
 
-    def run
+    def parse_args!
       OptionParser.new do |opt|
         opt.banner  = 'git browse-remote [options] [<commit> | <remote>] [--] [<file>]'
         opt.version = VERSION
@@ -38,6 +38,10 @@ module Git::Browse::Remote
       end.parse!(@args)
 
       @core.target, @core.file = *@args[0..1]
+    end
+
+    def run
+      parse_args!
 
       if @stdout
         puts @core.url
