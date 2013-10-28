@@ -34,7 +34,7 @@ module Git::Browse::Remote
           STDERR.puts 'Mappings generated:'
           exec "git config --get-regexp ^browse-remote\\.#{host}\\."
         end
-        opt.on('-L <n>', 'specify line number (only meaningful on file mode)', Integer) { |n| @core.line = n }
+        opt.on('-L <n>[,<m>]', 'specify line number (only meaningful on file mode)') { |lines| @core.lines = lines.split(/[,\-]/).map(&:to_i).uniq  }
       end.parse!(@args)
 
       @core.target, @core.file = *@args[0..1]

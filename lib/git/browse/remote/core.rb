@@ -15,14 +15,14 @@ module Git::Browse::Remote
   end
 
   class Core
-    attr_accessor :line, :file
+    attr_accessor :lines, :file
 
     MAPPING_RECIPES = {
       :github => {
         :top  => 'https://{host}/{path}',
         :ref  => 'https://{host}/{path}/tree/{short_ref}',
         :rev  => 'https://{host}/{path}/commit/{commit}',
-        :file => 'https://{host}/{path}/{file.directory? and :tree or :blob}/{short_rev}/{file}{line && "#L%d" % line}',
+        :file => 'https://{host}/{path}/{file.directory? and :tree or :blob}/{short_rev}/{file}{lines && "#L%s" % lines.join("-")}',
       },
 
       :gitweb => {
@@ -173,6 +173,10 @@ module Git::Browse::Remote
 
     def short_ref
       _ref(true)
+    end
+
+    def line
+      lines.first
     end
 
     def target=(target)

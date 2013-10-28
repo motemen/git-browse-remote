@@ -32,11 +32,9 @@ describe Git::Browse::Remote::Runner do
     end
   end
 
-  pending do
-    when_args_parsed ['-L337,400'] do
-      it 'should set @core.lines to [337,400]' do
-        expect(core.lines).to eq([337,400])
-      end
+  when_args_parsed ['-L337,400'] do
+    it 'should set @core.lines to [337,400]' do
+      expect(core.lines).to eq([337,400])
     end
   end
 end
