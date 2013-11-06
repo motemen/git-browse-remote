@@ -176,7 +176,7 @@ module Git::Browse::Remote
     end
 
     def line
-      lines.first
+      lines and lines.first
     end
 
     def target=(target)
