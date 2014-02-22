@@ -3,6 +3,13 @@ git-browse-remote [![Build Status](https://travis-ci.org/motemen/git-browse-remo
 
 `git-browse-remote` helps viewing remote repositories e.g. GitHub in your browser.
 
+Installation
+------------
+
+```
+[sudo] gem install git-browse-remote 
+```
+
 Usage
 -----
 
