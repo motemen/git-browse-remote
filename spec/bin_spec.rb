@@ -53,6 +53,12 @@ RSpec.configure do |config|
     git :remote, 'add', 'origin', 'https://github.com/user/repo.git'
     git :remote, 'add', 'origin2', 'git@gh-mirror.host:user/repo2'
 
+    git :remote, 'add', 'origin3', 'ssh://git@my-git-host.com:9999/user/repo2'
+    git :config, '--local', 'browse-remote.my-git-host.com.top',  'https://{host}/{path}'
+
+    git :remote, 'add', 'origin4', 'ssh://git@my-git-host2.com:9999/user/repo2'
+    git :config, '--local', 'browse-remote.my-git-host2.com.top',  'https://{host}:{port}/{path}'
+
     FileUtils.copy_file ROOT + 'README.md', 'README.md'
     git :add, 'README.md'
     git :commit, '-m' '1st commit'
@@ -243,6 +249,18 @@ describe 'git-browse-remote' do
     when_run_with_args 'origin2' do
       it 'should open the remote' do
         expect(opened_url).to eq("https://gh-mirror.host/user/repo2")
+      end
+    end
+
+    when_run_with_args '--remote', 'origin3' do
+      it 'should open the specified remote page' do
+        expect(opened_url).to eq("https://my-git-host.com/user/repo2")
+      end
+    end
+
+    when_run_with_args '--remote', 'origin4' do
+      it 'should open the specified remote page' do
+        expect(opened_url).to eq("https://my-git-host2.com:9999/user/repo2")
       end
     end
   end

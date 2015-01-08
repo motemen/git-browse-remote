@@ -78,6 +78,7 @@ module Git::Browse::Remote
           abort "Could not get remote url: #{remote}"
 
       host, *path = remote_url.sub(%r(^\w+://), '').sub(/^[\w-]+@/, '').split(/[\/:]+/)
+      port = path.shift if path.first =~ /\d+/
       path.last.sub!(/\.git$/, '')
       path = Path.new(path)
 
