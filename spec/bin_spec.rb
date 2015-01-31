@@ -59,6 +59,9 @@ RSpec.configure do |config|
     git :remote, 'add', 'origin4', 'ssh://git@my-git-host2.com:9999/user/repo2'
     git :config, '--local', 'browse-remote.my-git-host2.com.top',  'https://{host}:{port}/{path}'
 
+    git :remote, 'add', 'origin5', 'git@my-git-host3.com:9999/user/repo2' # here 9999 is a part of path
+    git :config, '--local', 'browse-remote.my-git-host3.com.top',  'https://{host}/{path}'
+
     FileUtils.copy_file ROOT + 'README.md', 'README.md'
     git :add, 'README.md'
     git :commit, '-m' '1st commit'
@@ -261,6 +264,12 @@ describe 'git-browse-remote' do
     when_run_with_args '--remote', 'origin4' do
       it 'should open the specified remote page' do
         expect(opened_url).to eq("https://my-git-host2.com:9999/user/repo2")
+      end
+    end
+
+    when_run_with_args '--remote', 'origin5' do
+      it 'should open the specified remote page' do
+        expect(opened_url).to eq("https://my-git-host3.com/9999/user/repo2")
       end
     end
   end
