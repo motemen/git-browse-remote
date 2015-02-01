@@ -1,5 +1,6 @@
 require 'git/browse/remote/git'
 require 'pathname'
+require 'uri'
 
 module Git::Browse::Remote
   class Path < Array
@@ -77,7 +78,18 @@ module Git::Browse::Remote
       remote_url = `git config remote.#{remote}.url`[/.+/] or
           abort "Could not get remote url: #{remote}"
 
-      host, *path = remote_url.sub(%r(^\w+://), '').sub(/^[\w-]+@/, '').split(/[\/:]+/)
+      unless %r(^\w+://) === remote_url
+        # SCP-like URLs of form "[user@]host.xz:path/to/repo.git"
+        # will be converted to "ssh://[user@]host.xz/path/to/repo.git"
+        remote_url = 'ssh://' + remote_url.sub(/:/, '/')
+      end
+
+      # Normal URLs
+      u = URI(remote_url)
+      host = u.host
+      port = u.port
+      host_port = if port == u.default_port then host else "#{host}:#{port}" end
+      path = u.path.sub(%r(^/), '').split('/')
       path.last.sub!(/\.git$/, '')
       path = Path.new(path)
 
