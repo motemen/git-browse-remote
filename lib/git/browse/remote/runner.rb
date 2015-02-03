@@ -20,6 +20,7 @@ module Git::Browse::Remote
         opt.on('--top', 'open `top` page') { @core.mode = :top }
         opt.on('--rev', 'open `rev` page') { @core.mode = :rev }
         opt.on('--ref', 'open `ref` page') { @core.mode = :ref }
+        opt.on('--pr',  'open `pr` page')  { @core.mode = :pr  }
         opt.on('--init [<host>=<recipe>]', 'initialize default url mappings') do |config|
           if config
             host, name = *config.split(/=/, 2)

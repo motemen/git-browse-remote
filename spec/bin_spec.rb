@@ -295,6 +295,12 @@ describe 'git-browse-remote' do
       end
     end
 
+    when_run_with_args '--pr' do
+      it 'should open the pull request page' do
+        expect(opened_url).to eq("https://github.com/user/repo/pull/branch-1")
+      end
+    end
+
     when_run_with_args 'README.md' do
       it 'should open the file page at current branch' do
         expect(opened_url).to eq("https://github.com/user/repo/blob/branch-1/README.md")
