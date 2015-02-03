@@ -23,6 +23,7 @@ module Git::Browse::Remote
         :top  => 'https://{host}/{path}',
         :ref  => 'https://{host}/{path}/tree/{short_ref}',
         :rev  => 'https://{host}/{path}/commit/{commit}',
+        :pr   => 'https://{host}/{path}/pull/{short_ref}',
         :file => 'https://{host}/{path}/{file.directory? and :tree or :blob}/{short_rev}/{file}{lines && "#L%s" % lines.join("-")}',
       },
 
