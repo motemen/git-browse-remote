@@ -52,11 +52,11 @@ module Git::Browse::Remote
     end
 
     def url
-      if target && !@file && File.exists?(target)
+      if target && !@file && File.exist?(target)
         self.target, @file = nil, target
       end
 
-      if @file && File.exists?(@file)
+      if @file && File.exist?(@file)
         @file = Filepath.new(@file)
       end
 
